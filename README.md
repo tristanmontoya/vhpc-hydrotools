@@ -1,11 +1,11 @@
-# `vhpc-hydrotools`
+# Virtual HPC cluster with hydrologic modeling tools
 
-`vhpc-hydrotools` is a hydrologic modeling fork of
+The `vhpc-hydrotools` virtual HPC cluster is a hydrologic modeling fork of
 [eXact lab vHPC](https://github.com/exactlab/vhpc). The original project
 provides a Docker Compose-based virtual HPC cluster with Slurm, OpenMPI, shared
 storage, and SSH access on Rocky Linux 9.
 
-This fork keeps that cluster layout and adds two project specific changes:
+This fork keeps that cluster layout and adds two project-specific changes:
 
 - **Cross-architecture images**: images are published for `linux/amd64` and
   `linux/arm64`, so the same tags can run on x86_64 machines and ARM64 systems
