@@ -36,9 +36,6 @@ RUN chown -R slurm:slurm /etc/slurm
 # Expose SSH
 EXPOSE 22
 
-# link python interpreter from shared venv, if it exists
-RUN if [ -f /opt/venv/bin/python ]; then ln -s /opt/venv/bin/python /usr/bin/python; fi
-
 ENV SLURM_CONF=/etc/slurm/slurm.conf
 
 COPY entrypoint.sh /entrypoint.sh

@@ -69,7 +69,6 @@ if res:
 install_packages() {
     local package_types="$*"
 
-    /opt/venv/bin/python -m pip install pyyaml
     echo "Installing additional packages if packages.yml is provided..."
     if [ -f "/packages.yml" ]; then
         echo "[PACKAGE-INSTALLER] Parsing package lists..."
@@ -116,6 +115,29 @@ execute_extra_commands() {
 setup_ssh() {
     echo "Starting sshd..."
     /usr/sbin/sshd
+}
+
+seed_hydrolearn_workspace() {
+    local source_dir="${HYDROLEARN_HPC_DIR:-/opt/hydrolearn-hpc}"
+    local workspace_dir="${HYDROLEARN_HPC_WORKSPACE:-/workspace/hydrolearn-hpc}"
+
+    if [ ! -d "$source_dir" ]; then
+        return 0
+    fi
+
+    if [ -d "$workspace_dir/.git" ]; then
+        return 0
+    fi
+
+    if [ -d "$workspace_dir" ] && [ -n "$(ls -A "$workspace_dir" 2>/dev/null)" ]; then
+        echo "HydroLearn HPC workspace already exists, skipping seed"
+        return 0
+    fi
+
+    echo "Loading HydroLearn HPC workspace into $workspace_dir"
+    mkdir -p "$workspace_dir"
+    cp -a "$source_dir/." "$workspace_dir/"
+    chown -R user:user "$workspace_dir" 2>/dev/null || true
 }
 
 # Load a public key from stdin to authorized_keys for both root and user.
@@ -180,6 +202,7 @@ headnode_startup() {
 
     install_packages rpm py
     execute_extra_commands
+    seed_hydrolearn_workspace
 
     setup_ssh
 
@@ -237,6 +260,7 @@ worker_startup() {
     # Only install dnf packages on workers (python packages are in shared venv)
     install_packages rpm
     execute_extra_commands
+    seed_hydrolearn_workspace
 
     echo "Synchronizing users from headnode..."
     if [ -f /user-sync/passwd ]; then

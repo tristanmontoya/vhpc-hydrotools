@@ -3,8 +3,11 @@ FROM rockylinux:9 AS hydrotools-builder
 ARG SUMMA_REF=v3.3.0
 ARG MIZUROUTE_REF=v3.1.1
 ARG OSTRICH_REF=v21.03.16
+ARG HYDROLEARN_HPC_REPO=https://github.com/tristanmontoya/hydrolearn-hpc.git
+ARG HYDROLEARN_HPC_REF=main
 
 ENV HYDROTOOLS_DIR=/opt/hydrotools
+ENV HYDROLEARN_HPC_DIR=/opt/hydrolearn-hpc
 ENV PATH=/usr/lib64/openmpi/bin:${HYDROTOOLS_DIR}/bin:$PATH
 ENV LD_LIBRARY_PATH=/usr/lib64/openmpi/lib
 
@@ -91,10 +94,23 @@ RUN set -eux; \
         echo "OSTRICH_REF=${OSTRICH_REF}"; \
     } > "${HYDROTOOLS_DIR}/versions.env"
 
+# Load HydroLearn HPC assignment materials during image build
+RUN set -eux; \
+    git clone --depth 1 --branch "${HYDROLEARN_HPC_REF}" \
+        "${HYDROLEARN_HPC_REPO}" \
+        "${HYDROLEARN_HPC_DIR}"; \
+    { \
+        echo "HYDROLEARN_HPC_REPO=${HYDROLEARN_HPC_REPO}"; \
+        echo "HYDROLEARN_HPC_REF=${HYDROLEARN_HPC_REF}"; \
+    } >> "${HYDROTOOLS_DIR}/versions.env"
+
 FROM rockylinux:9
 
 ENV HYDROTOOLS_DIR=/opt/hydrotools
-ENV PATH=${HYDROTOOLS_DIR}/bin:/usr/lib64/openmpi/bin:$PATH
+ENV HYDROLEARN_HPC_DIR=/opt/hydrolearn-hpc
+ENV HYDROLEARN_HPC_WORKSPACE=/workspace/hydrolearn-hpc
+ENV VIRTUAL_ENV=/opt/venv
+ENV PATH=${VIRTUAL_ENV}/bin:${HYDROTOOLS_DIR}/bin:/usr/lib64/openmpi/bin:$PATH
 ENV LD_LIBRARY_PATH=/usr/lib64/openmpi/lib
 
 # Install essential packages and enable repositories
@@ -104,8 +120,9 @@ RUN dnf makecache && \
     dnf install -y epel-release && \
     dnf clean all
 
-# Install Slurm, MPI, and dependencies from packages
+# Install Slurm, MPI, environment modules, and dependencies from packages
 RUN dnf install -y \
+    environment-modules \
     iputils \
     slurm \
     slurm-slurmctld \
@@ -113,6 +130,7 @@ RUN dnf install -y \
     slurm-slurmdbd \
     munge \
     munge-libs \
+    nco \
     python3.12 \
     python3.12-pip \
     openmpi \
@@ -124,8 +142,71 @@ RUN dnf install -y \
     mariadb \
     && dnf clean all
 
+# Create the assignment Python environment
+RUN python3.12 -m venv "${VIRTUAL_ENV}" && \
+    "${VIRTUAL_ENV}/bin/python" -m pip install --no-cache-dir --upgrade pip && \
+    "${VIRTUAL_ENV}/bin/python" -m pip install --no-cache-dir \
+        netCDF4 \
+        numpy \
+        pyyaml
+
+# Generate a stable MPI module from the installed OpenMPI path
+RUN set -eux; \
+    mpi_bin="$(dirname "$(command -v mpirun)")"; \
+    mpi_root="$(dirname "${mpi_bin}")"; \
+    for candidate in "${mpi_root}/lib" "${mpi_root}/lib64"; do \
+        if [ -d "${candidate}" ]; then \
+            mpi_lib="${candidate}"; \
+            break; \
+        fi; \
+    done; \
+    test -n "${mpi_lib:-}"; \
+    mkdir -p /etc/modulefiles; \
+    { \
+        echo '#%Module1.0'; \
+        echo 'proc ModulesHelp { } {'; \
+        echo '    puts stderr "Loads OpenMPI for vhpc-hydrotools"'; \
+        echo '}'; \
+        echo 'module-whatis "Loads OpenMPI"'; \
+        echo "set mpi_root ${mpi_root}"; \
+        echo 'set mpi_bin "$mpi_root/bin"'; \
+        echo "set mpi_lib ${mpi_lib}"; \
+        echo 'prepend-path PATH $mpi_bin'; \
+        echo 'prepend-path LD_LIBRARY_PATH $mpi_lib'; \
+        echo 'setenv OMPI_MCA_btl_vader_single_copy_mechanism none'; \
+        echo 'setenv OMPI_MCA_btl tcp,self'; \
+        echo 'setenv OMPI_MCA_mtl ^ofi'; \
+    } > /etc/modulefiles/mpi
+
+# Add local modulefiles to login shell module paths
+RUN cat > /etc/profile.d/zz-vhpc-modules.sh <<'EOF'
+if [ -n "${MODULEPATH}" ]; then
+    case ":${MODULEPATH}:" in
+        *:/etc/modulefiles:*) ;;
+        *) export MODULEPATH="/etc/modulefiles:${MODULEPATH}" ;;
+    esac
+else
+    export MODULEPATH=/etc/modulefiles
+fi
+EOF
+
 # Install precompiled hydrologic modelling tools
 COPY --from=hydrotools-builder /opt/hydrotools /opt/hydrotools
+
+# Install HydroLearn HPC assignment materials
+COPY --from=hydrotools-builder /opt/hydrolearn-hpc /opt/hydrolearn-hpc
+
+# Add hydrologic tools to login shells
+RUN cat > /etc/profile.d/hydrotools.sh <<'EOF'
+export HYDROTOOLS_DIR=/opt/hydrotools
+export VIRTUAL_ENV=/opt/venv
+export PATH="${VIRTUAL_ENV}/bin:${HYDROTOOLS_DIR}/bin:/usr/lib64/openmpi/bin:${PATH}"
+if [ -n "${LD_LIBRARY_PATH}" ]; then
+    export LD_LIBRARY_PATH="/usr/lib64/openmpi/lib:${LD_LIBRARY_PATH}"
+else
+    export LD_LIBRARY_PATH=/usr/lib64/openmpi/lib
+fi
+EOF
 
 # Create slurm user and directories with correct permissions
 RUN useradd -r -s /bin/false slurm && \

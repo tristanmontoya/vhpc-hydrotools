@@ -47,9 +47,6 @@ RUN chown -R slurm:slurm /var/slurm_config /etc/slurm /var/spool/slurm /var/log/
 # Expose SSH
 EXPOSE 22
 
-RUN python3.12 -m venv /opt/venv
-RUN ln -s /opt/venv/bin/python /usr/bin/python
-
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 

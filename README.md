@@ -41,10 +41,48 @@ Published images use the repository name as their package prefix:
 The GitHub Actions workflow publishes `linux/amd64` and `linux/arm64` manifests
 for tag builds and manual workflow dispatches.
 
+## HydroLearn HPC assignment workflow
+
+The base image clones
+[`tristanmontoya/hydrolearn-hpc`](https://github.com/tristanmontoya/hydrolearn-hpc)
+during the image build. The clone source is controlled by the build arguments
+`HYDROLEARN_HPC_REPO` and `HYDROLEARN_HPC_REF`, which default to the public
+GitHub repository and `main`.
+
+At startup, the headnode seeds the shared workspace volume from the baked image
+copy when `/workspace/hydrolearn-hpc` is empty. Runtime dependencies for the
+assignment are installed in the image. `packages.yml` is only needed for
+optional runtime additions.
+
+The user-facing Python environment is `/opt/venv`, which is built from
+Python 3.12 and is first on `PATH`. Both `python` and `python3` resolve to this
+environment inside the base, headnode, and worker images. Rocky Linux's system
+Python remains available only through its full path for operating system tools.
+
 ## Usage
 
-For cluster usage, configuration, security notes, and the upstream licence, see
-the [eXact lab vHPC main page](https://github.com/exactlab/vhpc).
+Before beginning, ensure Docker Compose and Git are installed. Docker provides
+[installation instructions for Docker Compose][compose-install], and the Git
+project provides [Git installation instructions][git-install].
+
+To start the cluster and SSH into the head node:
+
+```sh
+git clone https://github.com/tristanmontoya/vhpc-hydrotools.git
+cd vhpc-hydrotools
+docker compose up -d
+ssh -p 2222 user@localhost
+```
+
+Use the password `password` when prompted. The head node SSH service is mapped
+to `127.0.0.1:2222` by `docker-compose.yml`.
+
+For more complete cluster usage instructions, configuration information,
+security notes, and the upstream licence, see the
+[eXact lab vHPC main page](https://github.com/exactlab/vhpc).
+
+[compose-install]: https://docs.docker.com/compose/install/
+[git-install]: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
 
 ## Acknowledgements
 

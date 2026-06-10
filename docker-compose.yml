@@ -24,6 +24,9 @@ services:
     build:
       context: .
       dockerfile: Containerfile.slurm-base
+      args:
+        HYDROLEARN_HPC_REPO: ${HYDROLEARN_HPC_REPO:-https://github.com/tristanmontoya/hydrolearn-hpc.git}
+        HYDROLEARN_HPC_REF: ${HYDROLEARN_HPC_REF:-main}
     deploy:
       replicas: 0
 
@@ -61,6 +64,7 @@ services:
       - venv:/opt/venv
       - rpm-cache:/var/cache/dnf
       - ./packages.yml:/packages.yml:ro
+      - workspace:/workspace
       - home:/home
       - scratch:/scratch
     healthcheck:
@@ -90,6 +94,7 @@ services:
       - venv:/opt/venv:ro
       - rpm-cache:/var/cache/dnf
       - ./packages.yml:/packages.yml:ro
+      - workspace:/workspace
       - home:/home
       - scratch:/scratch
     depends_on:
@@ -131,6 +136,7 @@ volumes:
   rpm-cache:
   home:
   scratch:
+  workspace:
 
 networks:
   slurm-net:
