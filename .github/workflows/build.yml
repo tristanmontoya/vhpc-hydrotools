@@ -1,4 +1,4 @@
-name: Build and Push Docker Images
+name: Build and push vHPC Hydrotools images
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_PREFIX: tristanmontoya/vhpc
+  IMAGE_PREFIX: tristanmontoya/vhpc-hydrotools
   PLATFORMS: linux/amd64,linux/arm64
 
 jobs:
@@ -109,7 +109,8 @@ jobs:
           # Keep only the 5 most recent builds for each image
           for image in base headnode worker; do
             echo "Cleaning up old versions of $image..."
-            package_path="/users/tristanmontoya/packages/container/vhpc-$image/versions"
+            package_name="vhpc-hydrotools-$image"
+            package_path="/users/tristanmontoya/packages/container/$package_name/versions"
 
             # Get all versions sorted by creation date, skip the 5 most recent
             OLD_VERSIONS=$(gh api \
@@ -120,7 +121,7 @@ jobs:
 
             # Delete old versions
             for version_id in $OLD_VERSIONS; do
-              echo "Deleting version $version_id of vhpc-$image"
+              echo "Deleting version $version_id of $package_name"
               gh api \
                 --method DELETE \
                 -H "Accept: application/vnd.github+json" \

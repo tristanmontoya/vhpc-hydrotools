@@ -1,4 +1,5 @@
 # Local runtime configuration
+.env
 packages.yml
 docker-compose.override.yml
 compose.override.yml

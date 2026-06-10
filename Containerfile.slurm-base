@@ -1,4 +1,101 @@
+FROM rockylinux:9 AS hydrotools-builder
+
+ARG SUMMA_REF=v3.3.0
+ARG MIZUROUTE_REF=v3.1.1
+ARG OSTRICH_REF=v21.03.16
+
+ENV HYDROTOOLS_DIR=/opt/hydrotools
+ENV PATH=/usr/lib64/openmpi/bin:${HYDROTOOLS_DIR}/bin:$PATH
+ENV LD_LIBRARY_PATH=/usr/lib64/openmpi/lib
+
+# Install hydrologic tool build dependencies
+RUN dnf makecache && \
+    dnf install -y dnf-plugins-core && \
+    dnf config-manager --set-enabled crb && \
+    dnf install -y epel-release && \
+    dnf install -y \
+    cmake \
+    gcc \
+    gcc-c++ \
+    gcc-gfortran \
+    git \
+    make \
+    netcdf-devel \
+    netcdf-fortran-devel \
+    openblas-devel \
+    openmpi-devel \
+    && dnf clean all
+
+# Build SUMMA from a pinned release
+RUN set -eux; \
+    mkdir -p "${HYDROTOOLS_DIR}/src" "${HYDROTOOLS_DIR}/bin"; \
+    git clone --depth 1 --branch "${SUMMA_REF}" \
+        https://github.com/CH-Earth/summa.git \
+        "${HYDROTOOLS_DIR}/src/summa"; \
+    cd "${HYDROTOOLS_DIR}/src/summa"; \
+    SUMMA_INCLUDES="$(nf-config --fflags)"; \
+    SUMMA_LIBRARIES="$(nf-config --flibs) -lopenblas"; \
+    make -f build/Makefile \
+        F_MASTER="${HYDROTOOLS_DIR}/src/summa" \
+        FC=gfortran \
+        FC_EXE=gfortran \
+        INCLUDES="${SUMMA_INCLUDES}" \
+        LIBRARIES="${SUMMA_LIBRARIES}"; \
+    install -m 0755 "${HYDROTOOLS_DIR}/src/summa/bin/summa.exe" \
+        "${HYDROTOOLS_DIR}/bin/summa.exe"
+
+# Build mizuRoute from a pinned release
+RUN set -eux; \
+    mkdir -p "${HYDROTOOLS_DIR}/src" "${HYDROTOOLS_DIR}/bin"; \
+    git clone --depth 1 --branch "${MIZUROUTE_REF}" \
+        https://github.com/ESCOMP/mizuRoute.git \
+        "${HYDROTOOLS_DIR}/src/mizuroute"; \
+    cd "${HYDROTOOLS_DIR}/src/mizuroute"; \
+    mkdir -p libraries/parallelio; \
+    ./bin/git-fleximod -g .gitmodules update; \
+    cd "${HYDROTOOLS_DIR}/src/mizuroute/route"; \
+    MIZUROUTE_INCLUDES="$(nf-config --fflags)"; \
+    MIZUROUTE_LIBRARIES="$(nf-config --flibs) $(nc-config --libs)"; \
+    make -f build/Makefile \
+        FC=gnu \
+        FC_EXE=mpifort \
+        EXE=mizuRoute.exe \
+        MODE=fast \
+        isOpenMP=no \
+        isPIO=yes \
+        isGPTL=yes \
+        PIO_FILESYSTEM_HINTS= \
+        NCDF_PATH=/usr \
+        CMAKE_ENV_VARS="CC=mpicc CXX=mpicxx" \
+        F_MASTER="${HYDROTOOLS_DIR}/src/mizuroute/route/" \
+        LIBNETCDF="${MIZUROUTE_LIBRARIES}" \
+        INCNETCDF="${MIZUROUTE_INCLUDES}"; \
+    install -m 0755 "${HYDROTOOLS_DIR}/src/mizuroute/route/bin/mizuRoute.exe" \
+        "${HYDROTOOLS_DIR}/bin/mizuRoute.exe"
+
+# Build OSTRICH serial and MPI executables from a pinned release
+RUN set -eux; \
+    mkdir -p "${HYDROTOOLS_DIR}/src" "${HYDROTOOLS_DIR}/bin"; \
+    git clone --depth 1 --branch "${OSTRICH_REF}" \
+        https://github.com/DOI-BOR/ostrich.git \
+        "${HYDROTOOLS_DIR}/src/ostrich"; \
+    make -C "${HYDROTOOLS_DIR}/src/ostrich/make" -f makefile GCC; \
+    make -C "${HYDROTOOLS_DIR}/src/ostrich/make" -f makefile GCC_MPI; \
+    install -m 0755 "${HYDROTOOLS_DIR}/src/ostrich/make/Ostrich" \
+        "${HYDROTOOLS_DIR}/bin/Ostrich"; \
+    install -m 0755 "${HYDROTOOLS_DIR}/src/ostrich/make/OstrichMPI" \
+        "${HYDROTOOLS_DIR}/bin/OstrichMPI"; \
+    { \
+        echo "SUMMA_REF=${SUMMA_REF}"; \
+        echo "MIZUROUTE_REF=${MIZUROUTE_REF}"; \
+        echo "OSTRICH_REF=${OSTRICH_REF}"; \
+    } > "${HYDROTOOLS_DIR}/versions.env"
+
 FROM rockylinux:9
+
+ENV HYDROTOOLS_DIR=/opt/hydrotools
+ENV PATH=${HYDROTOOLS_DIR}/bin:/usr/lib64/openmpi/bin:$PATH
+ENV LD_LIBRARY_PATH=/usr/lib64/openmpi/lib
 
 # Install essential packages and enable repositories
 RUN dnf makecache && \
@@ -20,10 +117,15 @@ RUN dnf install -y \
     python3.12-pip \
     openmpi \
     openmpi-devel \
+    netcdf-fortran \
+    openblas-serial \
     gcc \
     gcc-c++ \
     mariadb \
     && dnf clean all
+
+# Install precompiled hydrologic modelling tools
+COPY --from=hydrotools-builder /opt/hydrotools /opt/hydrotools
 
 # Create slurm user and directories with correct permissions
 RUN useradd -r -s /bin/false slurm && \
@@ -57,6 +159,7 @@ RUN mkdir -p /root/.ssh /home/user/.ssh && \
 
 # Configure SSH daemon to support both password and key authentication
 RUN mkdir -p /etc/ssh/sshd_config.d && \
-    echo 'PubkeyAuthentication yes' > /etc/ssh/sshd_config.d/97.PubkeyAuthentication.conf && \
-    echo 'PasswordAuthentication yes' > /etc/ssh/sshd_config.d/99.PasswordAuthentication.conf && \
-    echo 'PermitRootLogin yes' > /etc/ssh/sshd_config.d/98.PermitRootLogin.conf
+    cd /etc/ssh/sshd_config.d && \
+    echo 'PubkeyAuthentication yes' > 97.PubkeyAuthentication.conf && \
+    echo 'PasswordAuthentication yes' > 99.PasswordAuthentication.conf && \
+    echo 'PermitRootLogin yes' > 98.PermitRootLogin.conf
