@@ -101,7 +101,8 @@ From the repository root, start the cluster:
 docker compose up -d
 ```
 
-This assumes the repository contains a `.env` file defining the image registry and version used by `docker-compose.yml`.
+The image registry and version have defaults in `docker-compose.yml`. Advanced
+users may override them with a local `.env` file or exported shell variables.
 
 ### Logging in
 
@@ -147,8 +148,6 @@ To leave the SSH session and return to your host terminal, run:
 exit
 ```
 
-You can also press `Ctrl-D`.
-
 ### Stopping and restarting the cluster
 
 For routine shutdown, stop the cluster without removing the containers:
@@ -163,8 +162,6 @@ Restart the same containers later with:
 docker compose start
 ```
 
-This preserves the existing containers and is less likely to trigger SSH host-key warnings.
-
 ### Removing the cluster containers
 
 To stop and remove the cluster containers and network:
@@ -173,7 +170,7 @@ To stop and remove the cluster containers and network:
 docker compose down
 ```
 
-Persistent Docker volumes are kept by default, so data in the workspace, home directories, scratch space, shared storage, virtual environment volume, Slurm configuration volume, and Slurm database volume can be reused the next time the cluster is started. You can check this by starting the cluster again:
+Note that this does not remove the named Docker volumes, so files in `/workspace`, `/home`, and `/scratch` will persist across cluster rebuilds. You can check this by starting the cluster again:
 
 ```sh
 docker compose up -d
@@ -181,15 +178,12 @@ docker compose up -d
 
 Because `docker compose down` removes containers, the SSH host key may change the next time the cluster is recreated. If that happens, remove the stale SSH key as described above.
 
-### Full reset (dangerous)
-
 To destroy the cluster state completely, including named Docker volumes:
 
 ```sh
 docker compose down --volumes
 ```
-
-Use `--volumes` only when you intentionally want to delete persisted cluster data.
+This will remove all files in the shared workspace and reset the cluster to a clean state. Use this command with caution.
 
 For more complete cluster usage instructions, configuration information,
 security notes, and the upstream licence, see the
