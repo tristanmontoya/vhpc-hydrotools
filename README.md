@@ -158,7 +158,11 @@ Note that this does not remove the named Docker volumes, so files in `/workspace
 docker compose up -d
 ```
 
-Because `docker compose down` removes containers, the SSH host key may change the next time the cluster is recreated. If that happens, remove the stale SSH key as described above. To destroy the cluster state completely, including named Docker volumes, use the following command:
+Because `docker compose down` removes containers, the SSH host key may change the next time the cluster is recreated. If that happens, remove the stale SSH key as described above. 
+
+### Destroying the cluster state
+
+If you'd like to start fresh and destroy the cluster state completely, including named Docker volumes, use the following command (but make sure you've backed up any important files in the volumes first):
 
 ```sh
 docker compose down --volumes
