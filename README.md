@@ -34,9 +34,9 @@ the base, head (login) node, and worker images. Build metadata is written to
 
 Published images use the repository name as their package prefix:
 
-- `ghcr.io/tristanmontoya/vhpc-hydrotools-base:v0.6.2`
-- `ghcr.io/tristanmontoya/vhpc-hydrotools-headnode:v0.6.2`
-- `ghcr.io/tristanmontoya/vhpc-hydrotools-worker:v0.6.2`
+- `ghcr.io/tristanmontoya/vhpc-hydrotools-base:v0.6.3`
+- `ghcr.io/tristanmontoya/vhpc-hydrotools-headnode:v0.6.3`
+- `ghcr.io/tristanmontoya/vhpc-hydrotools-worker:v0.6.3`
 
 The GitHub Actions workflow publishes `linux/amd64` and `linux/arm64` manifests
 for tag builds and manual workflow dispatches.
@@ -61,28 +61,139 @@ Python remains available only through its full path for operating system tools.
 
 ## Usage
 
-Before beginning, ensure Docker Compose and Git are installed. Docker provides
-[installation instructions for Docker Compose][compose-install], and the Git
-project provides [Git installation instructions][git-install].
+Before beginning, ensure [Docker Compose](https://docs.docker.com/compose/install/) and [Git](https://git-scm.com/install/) are installed. Docker provides [installation instructions for Docker Compose](https://docs.docker.com/compose/install/), and the Git project provides [Git installation instructions](https://git-scm.com/install/).
 
-To start the cluster and SSH into the head node:
+### Starting Docker
+
+Make sure Docker is installed and running before starting the cluster.
+
+On macOS, start Docker Desktop with:
 
 ```sh
-git clone https://github.com/tristanmontoya/vhpc-hydrotools.git
-cd vhpc-hydrotools
+docker desktop start
+```
+
+If that command is not available, use:
+
+```sh
+open -a Docker
+```
+
+On Windows, start Docker Desktop from the Start menu. Then open PowerShell or Windows Terminal for the commands below.
+
+If you are using Docker Engine directly on Linux, start the Docker daemon with:
+
+```sh
+sudo systemctl start docker
+```
+
+Check that Docker is running:
+
+```sh
+docker info
+```
+
+### Starting the cluster
+
+From the repository root, start the cluster:
+
+```sh
 docker compose up -d
+```
+
+This assumes the repository contains a `.env` file defining the image registry and version used by `docker-compose.yml`.
+
+### Logging in
+
+Log in to the head node:
+
+```sh
 ssh -p 2222 user@localhost
 ```
 
-Use the password `password` when prompted. The head node SSH service is mapped
-to `127.0.0.1:2222` by `docker-compose.yml`. To access the HydroLearn HPC material, navigate to the `/workspace/hydrolearn-hpc` directory on the head node.
+The default password is:
+
+```text
+password
+```
+
+Once logged in, the preinstalled software tools are installed in the following workspace:
+
+```sh
+/workspace/hydrolearn-hpc
+```
+
+### If SSH reports that the host key has changed
+
+If the cluster has been rebuilt, SSH may reject the connection with an error like:
+
+```text
+WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!
+Host key verification failed.
+```
+
+This can happen when the head-node container has been removed and recreated. Remove the stale SSH host key and reconnect:
+
+```sh
+ssh-keygen -R "[localhost]:2222"
+ssh -p 2222 user@localhost
+```
+
+### Exiting the cluster
+
+To leave the SSH session and return to your host terminal, run:
+
+```sh
+exit
+```
+
+You can also press `Ctrl-D`.
+
+### Stopping and restarting the cluster
+
+For routine shutdown, stop the cluster without removing the containers:
+
+```sh
+docker compose stop
+```
+
+Restart the same containers later with:
+
+```sh
+docker compose start
+```
+
+This preserves the existing containers and is less likely to trigger SSH host-key warnings.
+
+### Removing the cluster containers
+
+To stop and remove the cluster containers and network:
+
+```sh
+docker compose down
+```
+
+Persistent Docker volumes are kept by default, so data in the workspace, home directories, scratch space, shared storage, virtual environment volume, Slurm configuration volume, and Slurm database volume can be reused the next time the cluster is started. You can check this by starting the cluster again:
+
+```sh
+docker compose up -d
+```
+
+Because `docker compose down` removes containers, the SSH host key may change the next time the cluster is recreated. If that happens, remove the stale SSH key as described above.
+
+### Full reset (dangerous)
+
+To destroy the cluster state completely, including named Docker volumes:
+
+```sh
+docker compose down --volumes
+```
+
+Use `--volumes` only when you intentionally want to delete persisted cluster data.
 
 For more complete cluster usage instructions, configuration information,
 security notes, and the upstream licence, see the
 [eXact lab vHPC main page](https://github.com/exactlab/vhpc).
-
-[compose-install]: https://docs.docker.com/compose/install/
-[git-install]: https://git-scm.com/book/en/v2/Getting-Started-Installing-Git
 
 ## Acknowledgements
 
