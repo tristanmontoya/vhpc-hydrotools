@@ -88,7 +88,7 @@ Start the Docker daemon:
 ```sh
 sudo systemctl start docker
 ```
-If you want Docker to start automatically when starting your Linux machine, use the following command:
+If you want Docker to start automatically when booting your Linux machine, use the following command:
 
 ```sh
 sudo systemctl enable docker
@@ -122,9 +122,7 @@ Log in to the head node:
 ssh -p 2222 user@localhost
 ```
 
-Enter the default password (`password`) when prompted. Once logged in, the preinstalled software tools are available in `/workspace/hydrolearn-hpc`.
-
-If the cluster has been rebuilt, SSH may reject the connection with an error like:
+Enter the default password (`password`) when prompted. Once logged in, the preinstalled software tools are available in `/workspace/hydrolearn-hpc`. If the cluster has been rebuilt, SSH may reject the connection with an error like:
 
 ```text
 WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!
@@ -160,14 +158,11 @@ Note that this does not remove the named Docker volumes, so files in `/workspace
 docker compose up -d
 ```
 
-Because `docker compose down` removes containers, the SSH host key may change the next time the cluster is recreated. If that happens, remove the stale SSH key as described above.
-
-To destroy the cluster state completely, including named Docker volumes (i.e., all your data), use the following command:
+Because `docker compose down` removes containers, the SSH host key may change the next time the cluster is recreated. If that happens, remove the stale SSH key as described above. To destroy the cluster state completely, including named Docker volumes, use the following command:
 
 ```sh
 docker compose down --volumes
 ```
-This will remove all files in the shared workspace and reset the cluster to a clean state. Use this command with caution!
 
 For more complete cluster usage instructions, configuration information,
 security notes, and the upstream licence, see the
