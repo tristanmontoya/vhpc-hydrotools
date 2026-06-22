@@ -61,48 +61,58 @@ Python remains available only through its full path for operating system tools.
 
 ## Usage
 
-Before beginning, ensure [Docker Compose](https://docs.docker.com/compose/install/) and [Git](https://git-scm.com/install/) are installed. Docker provides [installation instructions for Docker Compose](https://docs.docker.com/compose/install/), and the Git project provides [Git installation instructions](https://git-scm.com/install/).
+### Using Docker
 
-### Starting Docker
+Before beginning, ensure [Docker Compose](https://docs.docker.com/compose/install/) and [Git](https://git-scm.com/install/) are installed following the official installation instructions. To run Docker, follow the instructions for your operating system below.
 
-Make sure Docker is installed and running before starting the cluster.
+#### MacOS
 
-On macOS, start Docker Desktop with:
+Open the terminal and start Docker Desktop from the command line:
 
 ```sh
 docker desktop start
 ```
-
-If that command is not available, use:
-
+or 
 ```sh
 open -a Docker
 ```
 
-On Windows, start Docker Desktop from the Start menu. Then open PowerShell or Windows Terminal for the commands below.
+#### Windows
 
-If you are using Docker Engine directly on Linux, start the Docker daemon with:
+Start Docker Desktop from the Start menu, then open PowerShell.
+
+#### Linux
+
+Start the Docker daemon:
 
 ```sh
 sudo systemctl start docker
 ```
+If you want Docker to start automatically when starting your Linux machine, use the following command:
 
-Check that Docker is running:
+```sh
+sudo systemctl enable docker
+``` 
+
+### Starting the cluster
+Use Git to clone the repository and change into the project directory:
+
+```sh 
+git clone https://github.com/tristanmontoya/vhpc-hydrotools.git
+cd vhpc-hydrotools
+```
+
+Before we set up the cluster, make sure that Docker is running:
 
 ```sh
 docker info
 ```
 
-### Starting the cluster
-
-From the repository root, start the cluster:
+Then, start up the cluster with the following command:
 
 ```sh
 docker compose up -d
 ```
-
-The image registry and version have defaults in `docker-compose.yml`. Advanced
-users may override them with a local `.env` file or exported shell variables.
 
 ### Logging in
 
@@ -112,19 +122,7 @@ Log in to the head node:
 ssh -p 2222 user@localhost
 ```
 
-The default password is:
-
-```text
-password
-```
-
-Once logged in, the preinstalled software tools are installed in the following workspace:
-
-```sh
-/workspace/hydrolearn-hpc
-```
-
-### If SSH reports that the host key has changed
+Enter the default password (`password`) when prompted. Once logged in, the preinstalled software tools are available in `/workspace/hydrolearn-hpc`.
 
 If the cluster has been rebuilt, SSH may reject the connection with an error like:
 
@@ -132,39 +130,25 @@ If the cluster has been rebuilt, SSH may reject the connection with an error lik
 WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!
 Host key verification failed.
 ```
-
-This can happen when the head-node container has been removed and recreated. Remove the stale SSH host key and reconnect:
+This can happen when the head node container has been removed and recreated. Remove the stale SSH host key and reconnect:
 
 ```sh
 ssh-keygen -R "[localhost]:2222"
 ssh -p 2222 user@localhost
 ```
 
-### Exiting the cluster
-
-To leave the SSH session and return to your host terminal, run:
-
-```sh
-exit
-```
-
-### Stopping and restarting the cluster
-
-For routine shutdown, stop the cluster without removing the containers:
+### Exiting, stopping, and restarting the cluster
+Exit the cluster by typing `exit` or pressing `Ctrl+D` in the SSH session. The cluster will continue running in the background. To "turn off" the virtual HPC system, simply stop the containers:
 
 ```sh
 docker compose stop
 ```
 
-Restart the same containers later with:
-
-```sh
-docker compose start
-```
+You can then restart the same containers later using `docker compose start`.
 
 ### Removing the cluster containers
 
-To stop and remove the cluster containers and network:
+Use the following command to stop *and remove* the cluster containers and network:
 
 ```sh
 docker compose down
@@ -178,12 +162,12 @@ docker compose up -d
 
 Because `docker compose down` removes containers, the SSH host key may change the next time the cluster is recreated. If that happens, remove the stale SSH key as described above.
 
-To destroy the cluster state completely, including named Docker volumes:
+To destroy the cluster state completely, including named Docker volumes (i.e., all your data), use the following command:
 
 ```sh
 docker compose down --volumes
 ```
-This will remove all files in the shared workspace and reset the cluster to a clean state. Use this command with caution.
+This will remove all files in the shared workspace and reset the cluster to a clean state. Use this command with caution!
 
 For more complete cluster usage instructions, configuration information,
 security notes, and the upstream licence, see the
