@@ -34,9 +34,9 @@ the base, head (login) node, and worker images. Build metadata is written to
 
 Published images use the repository name as their package prefix:
 
-- `ghcr.io/tristanmontoya/vhpc-hydrotools-base:v0.6.3`
-- `ghcr.io/tristanmontoya/vhpc-hydrotools-headnode:v0.6.3`
-- `ghcr.io/tristanmontoya/vhpc-hydrotools-worker:v0.6.3`
+- `ghcr.io/tristanmontoya/vhpc-hydrotools-base:v0.6.4`
+- `ghcr.io/tristanmontoya/vhpc-hydrotools-headnode:v0.6.4`
+- `ghcr.io/tristanmontoya/vhpc-hydrotools-worker:v0.6.4`
 
 The GitHub Actions workflow publishes `linux/amd64` and `linux/arm64` manifests
 for tag builds and manual workflow dispatches.
@@ -50,9 +50,9 @@ during the image build. The clone source is controlled by the build arguments
 GitHub repository and `main`.
 
 At startup, the headnode seeds the shared workspace volume from the baked image
-copy when `/workspace/hydrolearn-hpc` is empty. Runtime dependencies for the
-assignment are installed in the image. `packages.yml` is only needed for
-optional runtime additions.
+copy when `/workspace/hydrolearn-hpc` is empty. Python runtime dependencies for
+the assignment are installed from the baked `hydrolearn-hpc/requirements.txt`.
+`packages.yml` is only needed for optional runtime additions.
 
 The user-facing Python environment is `/opt/venv`, which is built from
 Python 3.12 and is first on `PATH`. Both `python` and `python3` resolve to this

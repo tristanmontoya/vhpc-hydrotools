@@ -139,15 +139,18 @@ RUN dnf install -y \
     openblas-serial \
     gcc \
     gcc-c++ \
+    git \
     mariadb \
     && dnf clean all
 
-# Create the assignment Python environment
+# Install HydroLearn HPC assignment materials
+COPY --from=hydrotools-builder /opt/hydrolearn-hpc /opt/hydrolearn-hpc
+
+# Create the assignment Python environment from the repository requirements
 RUN python3.12 -m venv "${VIRTUAL_ENV}" && \
     "${VIRTUAL_ENV}/bin/python" -m pip install --no-cache-dir --upgrade pip && \
     "${VIRTUAL_ENV}/bin/python" -m pip install --no-cache-dir \
-        netCDF4 \
-        numpy \
+        -r "${HYDROLEARN_HPC_DIR}/requirements.txt" \
         pyyaml
 
 # Generate a stable MPI module from the installed OpenMPI path
@@ -192,9 +195,6 @@ EOF
 
 # Install precompiled hydrologic modelling tools
 COPY --from=hydrotools-builder /opt/hydrotools /opt/hydrotools
-
-# Install HydroLearn HPC assignment materials
-COPY --from=hydrotools-builder /opt/hydrolearn-hpc /opt/hydrolearn-hpc
 
 # Add hydrologic tools to login shells
 RUN cat > /etc/profile.d/hydrotools.sh <<'EOF'
