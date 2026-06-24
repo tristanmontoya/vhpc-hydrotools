@@ -34,9 +34,9 @@ the base, head (login) node, and worker images. Build metadata is written to
 
 Published images use the repository name as their package prefix:
 
-- `ghcr.io/tristanmontoya/vhpc-hydrotools-base:v0.6.5`
-- `ghcr.io/tristanmontoya/vhpc-hydrotools-headnode:v0.6.5`
-- `ghcr.io/tristanmontoya/vhpc-hydrotools-worker:v0.6.5`
+- `ghcr.io/tristanmontoya/vhpc-hydrotools-base:v0.6.6`
+- `ghcr.io/tristanmontoya/vhpc-hydrotools-headnode:v0.6.6`
+- `ghcr.io/tristanmontoya/vhpc-hydrotools-worker:v0.6.6`
 
 The GitHub Actions workflow publishes `linux/amd64` and `linux/arm64` manifests
 for tag builds and manual workflow dispatches.

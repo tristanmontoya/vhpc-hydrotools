@@ -19,7 +19,7 @@ services:
     restart: unless-stopped              # Auto-restart for high availability
 
   vhpc-hydrotools-base-image:
-    image: ${REGISTRY:-ghcr.io/tristanmontoya/}vhpc-hydrotools-base:${VERSION:-v0.6.5}
+    image: ${REGISTRY:-ghcr.io/tristanmontoya/}vhpc-hydrotools-base:${VERSION:-v0.6.6}
     pull_policy: missing
     build:
       context: .
@@ -31,7 +31,7 @@ services:
       replicas: 0
 
   slurm-headnode:
-    image: ${REGISTRY:-ghcr.io/tristanmontoya/}vhpc-hydrotools-headnode:${VERSION:-v0.6.5}
+    image: ${REGISTRY:-ghcr.io/tristanmontoya/}vhpc-hydrotools-headnode:${VERSION:-v0.6.6}
     pull_policy: missing
     build:
       context: .
@@ -77,7 +77,7 @@ services:
       - slurm-net
 
   x-slurm-worker-common: &slurm-worker-common
-    image: ${REGISTRY:-ghcr.io/tristanmontoya/}vhpc-hydrotools-worker:${VERSION:-v0.6.5}
+    image: ${REGISTRY:-ghcr.io/tristanmontoya/}vhpc-hydrotools-worker:${VERSION:-v0.6.6}
     pull_policy: missing
     build:
       context: .
