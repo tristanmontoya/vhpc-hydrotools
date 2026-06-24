@@ -1,7 +1,7 @@
 FROM rockylinux:9 AS hydrotools-builder
 
 ARG SUMMA_REF=v3.3.0
-ARG MIZUROUTE_REF=v3.1.1
+ARG MIZUROUTE_REF=v1.2.3
 ARG OSTRICH_REF=v21.03.16
 ARG HYDROLEARN_HPC_REPO=https://github.com/tristanmontoya/hydrolearn-hpc.git
 ARG HYDROLEARN_HPC_REF=main
@@ -54,8 +54,6 @@ RUN set -eux; \
         https://github.com/ESCOMP/mizuRoute.git \
         "${HYDROTOOLS_DIR}/src/mizuroute"; \
     cd "${HYDROTOOLS_DIR}/src/mizuroute"; \
-    mkdir -p libraries/parallelio; \
-    ./bin/git-fleximod -g .gitmodules update; \
     cd "${HYDROTOOLS_DIR}/src/mizuroute/route"; \
     MIZUROUTE_INCLUDES="$(nf-config --fflags)"; \
     MIZUROUTE_LIBRARIES="$(nf-config --flibs) $(nc-config --libs)"; \
@@ -65,11 +63,7 @@ RUN set -eux; \
         EXE=mizuRoute.exe \
         MODE=fast \
         isOpenMP=no \
-        isPIO=yes \
-        isGPTL=yes \
-        PIO_FILESYSTEM_HINTS= \
         NCDF_PATH=/usr \
-        CMAKE_ENV_VARS="CC=mpicc CXX=mpicxx" \
         F_MASTER="${HYDROTOOLS_DIR}/src/mizuroute/route/" \
         LIBNETCDF="${MIZUROUTE_LIBRARIES}" \
         INCNETCDF="${MIZUROUTE_INCLUDES}"; \

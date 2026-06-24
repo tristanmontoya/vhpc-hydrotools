@@ -22,7 +22,7 @@ already available in both supported container architectures.
 The tools are built from pinned upstream releases in `Containerfile.slurm-base`:
 
 - [SUMMA](https://github.com/CH-Earth/summa) `v3.3.0` as `summa.exe`
-- [mizuRoute](https://github.com/ESCOMP/mizuRoute) `v3.1.1` as `mizuRoute.exe`
+- [mizuRoute](https://github.com/ESCOMP/mizuRoute) `v1.2.3` as `mizuRoute.exe`
 - [OSTRICH](https://github.com/DOI-BOR/ostrich) `v21.03.16` as `Ostrich`
   and `OstrichMPI`
 
@@ -34,9 +34,9 @@ the base, head (login) node, and worker images. Build metadata is written to
 
 Published images use the repository name as their package prefix:
 
-- `ghcr.io/tristanmontoya/vhpc-hydrotools-base:v0.6.4`
-- `ghcr.io/tristanmontoya/vhpc-hydrotools-headnode:v0.6.4`
-- `ghcr.io/tristanmontoya/vhpc-hydrotools-worker:v0.6.4`
+- `ghcr.io/tristanmontoya/vhpc-hydrotools-base:v0.6.5`
+- `ghcr.io/tristanmontoya/vhpc-hydrotools-headnode:v0.6.5`
+- `ghcr.io/tristanmontoya/vhpc-hydrotools-worker:v0.6.5`
 
 The GitHub Actions workflow publishes `linux/amd64` and `linux/arm64` manifests
 for tag builds and manual workflow dispatches.
